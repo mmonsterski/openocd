@@ -266,6 +266,38 @@ static const struct mspm0_part_info mspm0gxx0x_parts[] = {
 	{ "M0G3105QRHBRQ1", 0x1349, 0x01},
 };
 
+/* https://www.ti.com/lit/ds/symlink/mspm0g3519.pdf Table 8-21 and so on */
+static const struct mspm0_part_info mspm0gx51x_parts[] = {
+	{ "MSPM0G1518SPMR",  0x2120, 0x13 },
+    { "MSPM0G1518SPNR",  0x2120, 0x16 },
+    { "MSPM0G1518SPTR",  0x2120, 0x12 },
+    { "MSPM0G1518SPZR",  0x2120, 0x18 },
+    { "MSPM0G1518SRGZR", 0x2120, 0x11 },
+    { "MSPM0G1518SRHBR", 0x2120, 0x10 },
+    { "MSPM0G1518SZAWR", 0x2120, 0x19 },
+    { "MSPM0G1519SPMR",  0x2407, 0x13 },
+    { "MSPM0G1519SPNR",  0x2407, 0x16 },
+    { "MSPM0G1519SPTR",  0x2407, 0x12 },
+    { "MSPM0G1519SPZR",  0x2407, 0x18 },
+    { "MSPM0G1519SRGZR", 0x2407, 0x11 },
+    { "MSPM0G1519SRHBR", 0x2407, 0x10 },
+    { "MSPM0G1519SZAWR", 0x2407, 0x19 },
+    { "MSPM0G3518SPMR",  0x1205, 0x13 },
+    { "MSPM0G3518SPNR",  0x1205, 0x15 },
+    { "MSPM0G3518SPTR",  0x1205, 0x12 },
+    { "MSPM0G3518SPZR",  0x1205, 0x16 },
+    { "MSPM0G3518SRGZR", 0x1205, 0x11 },
+    { "MSPM0G3518SRHBR", 0x1205, 0x10 },
+    { "MSPM0G3518SZAWR", 0x1205, 0x19 },
+    { "MSPM0G3519SPMR",  0x1508, 0x13 },
+    { "MSPM0G3519SPNR",  0x1508, 0x15 },
+    { "MSPM0G3519SPTR",  0x1508, 0x12 },
+    { "MSPM0G3519SPZR",  0x1508, 0x16 },
+    { "MSPM0G3519SRGZR", 0x1508, 0x11 },
+    { "MSPM0G3519SRHBR", 0x1508, 0x10 },
+    { "MSPM0G3519SZAWR", 0x1508, 0x19 },
+};
+
 /* https://www.ti.com/lit/gpn/mspm0c1104 Table 8-12 and so on */
 static const struct mspm0_part_info mspm0c_parts[] = {
 	{ "MSPS003F4SPW20R", 0x57b3, 0x70},
@@ -305,7 +337,8 @@ static const struct mspm0_part_info mspm0lx22x_parts[] = {
 static const struct mspm0_family_info mspm0_finf[] = {
 	{ "MSPM0L", 0xbb82, ARRAY_SIZE(mspm0l_parts), mspm0l_parts },
 	{ "MSPM0Lx22x", 0xbb9f, ARRAY_SIZE(mspm0lx22x_parts), mspm0lx22x_parts },
-	{ "MSPM0G", 0xbb88, ARRAY_SIZE(mspm0gxx0x_parts), mspm0gxx0x_parts },
+	{ "MSPM0Gxx0x", 0xbb88, ARRAY_SIZE(mspm0gxx0x_parts), mspm0gxx0x_parts },
+	{ "MSPM0Gx51x", 0xbba9, ARRAY_SIZE(mspm0gx51x_parts), mspm0gx51x_parts },
 	{ "MSPM0C", 0xbba1, ARRAY_SIZE(mspm0c_parts), mspm0c_parts },
 };
 
