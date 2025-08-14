@@ -189,7 +189,7 @@ static const struct mspm0_part_info mspm0l_parts[] = {
 };
 
 /* https://www.ti.com/lit/ds/symlink/mspm0g3506.pdf Table 8-20 */
-static const struct mspm0_part_info mspm0g_parts[] = {
+static const struct mspm0_part_info mspm0gxx0x_parts[] = {
 	{ "MSPM0G1105TPTR", 0x8934, 0xD },
 	{ "MSPM0G1105TRGZR", 0x8934, 0xFE },
 	{ "MSPM0G1106TPMR", 0x477B, 0xD4 },
@@ -305,7 +305,7 @@ static const struct mspm0_part_info mspm0lx22x_parts[] = {
 static const struct mspm0_family_info mspm0_finf[] = {
 	{ "MSPM0L", 0xbb82, ARRAY_SIZE(mspm0l_parts), mspm0l_parts },
 	{ "MSPM0Lx22x", 0xbb9f, ARRAY_SIZE(mspm0lx22x_parts), mspm0lx22x_parts },
-	{ "MSPM0G", 0xbb88, ARRAY_SIZE(mspm0g_parts), mspm0g_parts },
+	{ "MSPM0G", 0xbb88, ARRAY_SIZE(mspm0gxx0x_parts), mspm0gxx0x_parts },
 	{ "MSPM0C", 0xbba1, ARRAY_SIZE(mspm0c_parts), mspm0c_parts },
 };
 
