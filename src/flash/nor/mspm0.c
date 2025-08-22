@@ -23,12 +23,22 @@
 #define MSPM0_FLASH_BASE_MAIN           0x0
 #define MSPM0_FLASH_BASE_DATA           0x41D00000
 
+/* MSPM0 FACTORYREGION and FACTORYVALUE offsets */
+#define MSPM0_TRACEID_OFFSET            0x000UL
+#define MSPM0_DID_OFFSET                0x004UL
+#define MSPM0_USERID_OFFSET             0x008UL
+#define MSPM0_SRAMFLASH_OFFSET          0x018UL
+
+
 /* MSPM0 FACTORYREGION registers */
 #define MSPM0_FACTORYREGION             0x41C40000
-#define MSPM0_TRACEID                   (MSPM0_FACTORYREGION + 0x000)
-#define MSPM0_DID                       (MSPM0_FACTORYREGION + 0x004)
-#define MSPM0_USERID                    (MSPM0_FACTORYREGION + 0x008)
-#define MSPM0_SRAMFLASH                 (MSPM0_FACTORYREGION + 0x018)
+#define MSPM0_TRACEID                   (MSPM0_FACTORYREGION + MSPM0_TRACEID_OFFSET)
+#define MSPM0_DID                       (MSPM0_FACTORYREGION + MSPM0_DID_OFFSET)
+#define MSPM0_USERID                    (MSPM0_FACTORYREGION + MSPM0_USERID_OFFSET)
+#define MSPM0_SRAMFLASH                 (MSPM0_FACTORYREGION + MSPM0_SRAMFLASH_OFFSET)
+
+/* MSPM0 FACTORYVALUE address */
+#define MSPM0_FACTORYVALUE				0x20200000
 
 /* MSPM0 FCTL registers */
 #define FLASH_CONTROL_BASE              0x400CD000
@@ -441,6 +451,37 @@ static int mspm0_read_part_info(struct flash_bank *bank)
 	if (retval != ERROR_OK) {
 		LOG_ERROR("Failed to read flashctl description register");
 		return retval;
+	}
+
+	if (did == 0 && userid == 0 && flashram == 0 && flashdesc == 0)
+	{
+		/* Try to read values for MSPM0Gx51x from FACTORYVALUE */
+		uint32_t factoryvalue;
+		retval = target_read_u32(target, MSPM0_FACTORYVALUE, &factoryvalue);
+		if (retval != ERROR_OK) {
+			LOG_ERROR("Failed to read factoryvalue variable");
+		return retval;
+		}
+		retval = target_read_u32(target, factoryvalue + MSPM0_DID_OFFSET, &did);
+		if (retval != ERROR_OK) {
+			LOG_ERROR("Failed to read device ID");
+			return retval;
+		}
+		retval = target_read_u32(target, factoryvalue + MSPM0_TRACEID_OFFSET, &mspm0_info->traceid);
+		if (retval != ERROR_OK) {
+			LOG_ERROR("Failed to read trace ID");
+			return retval;
+		}
+		retval = target_read_u32(target, factoryvalue + MSPM0_USERID_OFFSET, &userid);
+		if (retval != ERROR_OK) {
+			LOG_ERROR("Failed to read user ID");
+			return retval;
+		}
+		retval = target_read_u32(target, factoryvalue + MSPM0_SRAMFLASH_OFFSET, &flashram);
+		if (retval != ERROR_OK) {
+			LOG_ERROR("Failed to read sramflash register");
+			return retval;
+		}
 	}
 
 	unsigned char version = mspm0_extract_val(did, 31, 28);
