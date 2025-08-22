@@ -453,6 +453,11 @@ static int mspm0_read_part_info(struct flash_bank *bank)
 		return retval;
 	}
 
+	LOG_WARNING("DID:" PRIx32 "]", did);
+	LOG_WARNING("USERID:" PRIx32 "]", userid);
+	LOG_WARNING("FLASHRAM:" PRIx32 "]", flashram);
+	LOG_WARNING("FLASHDESC:" PRIx32 "]", flashdesc);
+
 	if (did == 0 && userid == 0 && flashram == 0 && flashdesc == 0)
 	{
 		/* Try to read values for MSPM0Gx51x from FACTORYVALUE */
