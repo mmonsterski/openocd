@@ -38,7 +38,10 @@
 #define MSPM0_SRAMFLASH                 (MSPM0_FACTORYREGION + MSPM0_SRAMFLASH_OFFSET)
 
 /* MSPM0 FACTORYVALUE address */
-#define MSPM0_FACTORYVALUE				0x20200000
+#define MSPM0_MEMORY_START				0x20200000
+#define MSPM0_MEMORY_END				0x20220000
+#define MSPM0_TRIM_FLAG                 0xCAFECAFE
+#define MSPM0_TRIM_FLAG_OFFSET			0x040UL
 
 /* MSPM0 FCTL registers */
 #define FLASH_CONTROL_BASE              0x400CD000
@@ -453,15 +456,30 @@ static int mspm0_read_part_info(struct flash_bank *bank)
 		return retval;
 	}
 
-	if (did == 0 && userid == 0 && flashram == 0)
-	{
+	if (did == 0 && userid == 0 && flashram == 0) {
 		/* Try to read values for MSPM0Gx51x from FACTORYVALUE */
-		uint32_t factoryvalue;
-		retval = target_read_u32(target, MSPM0_FACTORYVALUE, &factoryvalue);
-		if (retval != ERROR_OK) {
-			LOG_ERROR("Failed to read factoryvalue variable");
-		return retval;
+		uint32_t trimflag_address;
+		uint32_t trimflag;
+
+		for (trimflag_address = MSPM0_MEMORY_START + MSPM0_TRIM_FLAG_OFFSET; trimflag_address < MSPM0_MEMORY_END; trimflag_address += 4)
+		{
+			retval = target_read_u32(target, trimflag_address, &trimflag);
+			if (retval != ERROR_OK) {
+				LOG_ERROR("Failed to read memory");
+				return retval;
+			}
+
+			if (trimflag == MSPM0_TRIM_FLAG)
+				break;
 		}
+			
+		if (trimflag_address == MSPM0_MEMORY_END) {
+				LOG_ERROR("Failed to read memory");
+				return ERROR_FAIL;
+		}
+		
+		uint32_t factoryvalue = trimflag_address - MSPM0_TRIM_FLAG_OFFSET;
+
 		retval = target_read_u32(target, factoryvalue + MSPM0_DID_OFFSET, &did);
 		if (retval != ERROR_OK) {
 			LOG_ERROR("Failed to read device ID");
