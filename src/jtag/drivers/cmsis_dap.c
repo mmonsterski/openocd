@@ -52,9 +52,16 @@ const struct cmsis_dap_backend cmsis_dap_hid_backend = {
 };
 #endif
 
+#if BUILD_CMSIS_DAP_TCP == 0
+const struct cmsis_dap_backend cmsis_dap_tcp_backend = {
+	.name = "tcp"
+};
+#endif
+
 static const struct cmsis_dap_backend *const cmsis_dap_backends[] = {
 	&cmsis_dap_usb_backend,
 	&cmsis_dap_hid_backend,
+	&cmsis_dap_tcp_backend,
 };
 
 /* USB Config */
@@ -1559,38 +1566,38 @@ static void debug_parse_cmsis_buf(const uint8_t *cmd, int cmdlen)
 		printf(" %02x", cmd[i]);
 	printf("\n");
 	switch (cmd[0]) {
-		case CMD_DAP_JTAG_SEQ: {
-			printf("cmsis-dap jtag sequence command %02x (n=%d)\n", cmd[0], cmd[1]);
-			/*
-			 * #1 = number of sequences
-			 * #2 = sequence info 1
-			 * #3...4+n_bytes-1 = sequence 1
-			 * #4+n_bytes = sequence info 2
-			 * #5+n_bytes = sequence 2 (single bit)
-			 */
-			int pos = 2;
-			for (int seq = 0; seq < cmd[1]; ++seq) {
-				uint8_t info = cmd[pos++];
-				int len = info & DAP_JTAG_SEQ_TCK;
-				if (len == 0)
-					len = 64;
-				printf("  sequence %d starting %d: info %02x (len=%d tms=%d read_tdo=%d): ",
-					seq, pos, info, len, info & DAP_JTAG_SEQ_TMS, info & DAP_JTAG_SEQ_TDO);
-				for (int i = 0; i < DIV_ROUND_UP(len, 8); ++i)
-					printf(" %02x", cmd[pos+i]);
-				pos += DIV_ROUND_UP(len, 8);
-				printf("\n");
-			}
-			if (pos != cmdlen) {
-				printf("BUFFER LENGTH MISMATCH looks like %d but %d specified", pos, cmdlen);
-				exit(-1);
-			}
-
-			break;
+	case CMD_DAP_JTAG_SEQ: {
+		printf("cmsis-dap jtag sequence command %02x (n=%d)\n", cmd[0], cmd[1]);
+		/*
+		 * #1 = number of sequences
+		 * #2 = sequence info 1
+		 * #3...4+n_bytes-1 = sequence 1
+		 * #4+n_bytes = sequence info 2
+		 * #5+n_bytes = sequence 2 (single bit)
+		 */
+		int pos = 2;
+		for (int seq = 0; seq < cmd[1]; ++seq) {
+			uint8_t info = cmd[pos++];
+			int len = info & DAP_JTAG_SEQ_TCK;
+			if (len == 0)
+				len = 64;
+			printf("  sequence %d starting %d: info %02x (len=%d tms=%d read_tdo=%d): ",
+				seq, pos, info, len, info & DAP_JTAG_SEQ_TMS, info & DAP_JTAG_SEQ_TDO);
+			for (int i = 0; i < DIV_ROUND_UP(len, 8); ++i)
+				printf(" %02x", cmd[pos + i]);
+			pos += DIV_ROUND_UP(len, 8);
+			printf("\n");
 		}
-		default:
-			LOG_DEBUG("unknown cmsis-dap command %02x", cmd[1]);
-			break;
+		if (pos != cmdlen) {
+			printf("BUFFER LENGTH MISMATCH looks like %d but %d specified", pos, cmdlen);
+			exit(-1);
+		}
+
+		break;
+	}
+	default:
+		LOG_DEBUG("unknown cmsis-dap command %02x", cmd[1]);
+		break;
 	}
 }
 #endif
@@ -1931,32 +1938,32 @@ static void cmsis_dap_execute_tms(struct jtag_command *cmd)
 static void cmsis_dap_execute_command(struct jtag_command *cmd)
 {
 	switch (cmd->type) {
-		case JTAG_SLEEP:
-			cmsis_dap_flush();
-			cmsis_dap_execute_sleep(cmd);
-			break;
-		case JTAG_TLR_RESET:
-			cmsis_dap_flush();
-			cmsis_dap_execute_tlr_reset(cmd);
-			break;
-		case JTAG_SCAN:
-			cmsis_dap_execute_scan(cmd);
-			break;
-		case JTAG_PATHMOVE:
-			cmsis_dap_execute_pathmove(cmd);
-			break;
-		case JTAG_RUNTEST:
-			cmsis_dap_execute_runtest(cmd);
-			break;
-		case JTAG_STABLECLOCKS:
-			cmsis_dap_execute_stableclocks(cmd);
-			break;
-		case JTAG_TMS:
-			cmsis_dap_execute_tms(cmd);
-			break;
-		default:
-			LOG_ERROR("BUG: unknown JTAG command type 0x%X encountered", cmd->type);
-			exit(-1);
+	case JTAG_SLEEP:
+		cmsis_dap_flush();
+		cmsis_dap_execute_sleep(cmd);
+		break;
+	case JTAG_TLR_RESET:
+		cmsis_dap_flush();
+		cmsis_dap_execute_tlr_reset(cmd);
+		break;
+	case JTAG_SCAN:
+		cmsis_dap_execute_scan(cmd);
+		break;
+	case JTAG_PATHMOVE:
+		cmsis_dap_execute_pathmove(cmd);
+		break;
+	case JTAG_RUNTEST:
+		cmsis_dap_execute_runtest(cmd);
+		break;
+	case JTAG_STABLECLOCKS:
+		cmsis_dap_execute_stableclocks(cmd);
+		break;
+	case JTAG_TMS:
+		cmsis_dap_execute_tms(cmd);
+		break;
+	default:
+		LOG_ERROR("BUG: unknown JTAG command type 0x%X encountered", cmd->type);
+		exit(-1);
 	}
 }
 
@@ -2239,11 +2246,13 @@ COMMAND_HANDLER(cmsis_dap_handle_quirk_command)
 	if (CMD_ARGC > 1)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
-	if (CMD_ARGC == 1)
+	if (CMD_ARGC == 1) {
 		COMMAND_PARSE_ENABLE(CMD_ARGV[0], cmsis_dap_quirk_mode);
+		return ERROR_OK;
+	}
 
-	command_print(CMD, "CMSIS-DAP quirk workarounds %s",
-				  cmsis_dap_quirk_mode ? "enabled" : "disabled");
+	command_print(CMD, "%s", cmsis_dap_quirk_mode ? "enabled" : "disabled");
+
 	return ERROR_OK;
 }
 
@@ -2273,8 +2282,8 @@ static const struct command_registration cmsis_dap_subcommand_handlers[] = {
 		.name = "backend",
 		.handler = &cmsis_dap_handle_backend_command,
 		.mode = COMMAND_CONFIG,
-		.help = "set the communication backend to use (USB bulk or HID).",
-		.usage = "(auto | usb_bulk | hid)",
+		.help = "set the communication backend to use (USB bulk or HID, or TCP).",
+		.usage = "(auto | usb_bulk | hid | tcp)",
 	},
 	{
 		.name = "quirk",
@@ -2289,6 +2298,15 @@ static const struct command_registration cmsis_dap_subcommand_handlers[] = {
 		.chain = cmsis_dap_usb_subcommand_handlers,
 		.mode = COMMAND_ANY,
 		.help = "USB bulk backend-specific commands",
+		.usage = "<cmd>",
+	},
+#endif
+#if BUILD_CMSIS_DAP_TCP
+	{
+		.name = "tcp",
+		.chain = cmsis_dap_tcp_subcommand_handlers,
+		.mode = COMMAND_ANY,
+		.help = "TCP backend-specific commands",
 		.usage = "<cmd>",
 	},
 #endif
