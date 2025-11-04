@@ -470,7 +470,7 @@ static int mspm0_read_part_info(struct flash_bank *bank)
 		}
 
 		/* Select SYSOSC as clock source */
-		if (mclkcfg & SYSCTL_MCLKCFG_USEHSCLK_ENABLE != 0) {
+		if ((mclkcfg & SYSCTL_MCLKCFG_USEHSCLK_ENABLE) != 0) {
 			mclkcfg &= ~SYSCTL_MCLKCFG_USEHSCLK_ENABLE;
 			target_write_u32(target, SYSCTL_SOCLOCK_MCLKCFG, mclkcfg);
 			if (retval != ERROR_OK) {
@@ -481,7 +481,7 @@ static int mspm0_read_part_info(struct flash_bank *bank)
 		}
 
 		/* Read and parse chip identification and flash version register */
-		int retval = target_read_u32(target, MSPM0_DID, &did);
+		retval = target_read_u32(target, MSPM0_DID, &did);
 		if (retval != ERROR_OK) {
 			LOG_ERROR("Failed to read device ID");
 			return retval;
