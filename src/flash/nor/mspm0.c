@@ -23,13 +23,6 @@
 #define MSPM0_FLASH_BASE_MAIN           0x0
 #define MSPM0_FLASH_BASE_DATA           0x41D00000
 
-/* MSPM0 FACTORYREGION and FACTORYVALUE offsets */
-#define MSPM0_TRACEID_OFFSET            0x000UL
-#define MSPM0_DID_OFFSET                0x004UL
-#define MSPM0_USERID_OFFSET             0x008UL
-#define MSPM0_SRAMFLASH_OFFSET          0x018UL
-
-
 /* MSPM0 FACTORYREGION registers */
 #define MSPM0_FACTORYREGION             0x41C40000
 #define MSPM0_TRACEID                   (MSPM0_FACTORYREGION + MSPM0_TRACEID_OFFSET)
@@ -89,6 +82,10 @@
 /* SYSCTL BASE */
 #define SYSCTL_BASE                     0x400AF000
 #define SYSCTL_SECCFG_SECSTATUS         (SYSCTL_BASE + 0x00003048)
+#define SYSCTL_SOCLOCK_MCLKCFG			(SYSCTL_BASE + 0x00001104)
+
+#define SYSCTL_MCLKCFG_USEHSCLK_ENABLE  0x00010000U
+
 
 /* TI manufacturer ID */
 #define TI_MANUFACTURER_ID              0x17
@@ -456,49 +453,62 @@ static int mspm0_read_part_info(struct flash_bank *bank)
 		return retval;
 	}
 
+	/* If HSCLK is selected as clock source read from FACTORYVALUES always retturn 0*/
 	if (did == 0 && userid == 0 && flashram == 0) {
-		/* Try to read values for MSPM0Gx51x from FACTORYVALUE */
-		uint32_t trimflag_address;
-		uint32_t trimflag;
+		uint32_t mclkcfg = 0;
+		uint8_t hsclk_disabled = 0;
+		retval = target_read_u32(target, SYSCTL_SOCLOCK_MCLKCFG, &mclkcfg);
+		if (retval != ERROR_OK) {
+			LOG_ERROR("Failed to read memory");
+			return retval;
+		}
 
-		for (trimflag_address = MSPM0_MEMORY_START + MSPM0_TRIM_FLAG_OFFSET; trimflag_address < MSPM0_MEMORY_END; trimflag_address += 4)
-		{
-			retval = target_read_u32(target, trimflag_address, &trimflag);
+		/* Select SYSOSC as clock source */
+		if (mclkcfg & SYSCTL_MCLKCFG_USEHSCLK_ENABLE != 0) {
+			mclkcfg &= ~SYSCTL_MCLKCFG_USEHSCLK_ENABLE;
+			target_write_u32(target, SYSCTL_SOCLOCK_MCLKCFG, mclkcfg);
 			if (retval != ERROR_OK) {
-				LOG_ERROR("Failed to read memory");
+				LOG_ERROR("Failed to write memory");
 				return retval;
 			}
-
-			if (trimflag == MSPM0_TRIM_FLAG)
-				break;
+			hsclk_disabled = 1;
 		}
-			
-		if (trimflag_address == MSPM0_MEMORY_END) {
-				LOG_ERROR("Failed to read memory");
-				return ERROR_FAIL;
-		}
-		
-		uint32_t factoryvalue = trimflag_address - MSPM0_TRIM_FLAG_OFFSET;
 
-		retval = target_read_u32(target, factoryvalue + MSPM0_DID_OFFSET, &did);
+		/* Read and parse chip identification and flash version register */
+		int retval = target_read_u32(target, MSPM0_DID, &did);
 		if (retval != ERROR_OK) {
 			LOG_ERROR("Failed to read device ID");
 			return retval;
 		}
-		retval = target_read_u32(target, factoryvalue + MSPM0_TRACEID_OFFSET, &mspm0_info->traceid);
+		retval = target_read_u32(target, MSPM0_TRACEID, &mspm0_info->traceid);
 		if (retval != ERROR_OK) {
 			LOG_ERROR("Failed to read trace ID");
 			return retval;
 		}
-		retval = target_read_u32(target, factoryvalue + MSPM0_USERID_OFFSET, &userid);
+		retval = target_read_u32(target, MSPM0_USERID, &userid);
 		if (retval != ERROR_OK) {
 			LOG_ERROR("Failed to read user ID");
 			return retval;
 		}
-		retval = target_read_u32(target, factoryvalue + MSPM0_SRAMFLASH_OFFSET, &flashram);
+		retval = target_read_u32(target, MSPM0_SRAMFLASH, &flashram);
 		if (retval != ERROR_OK) {
 			LOG_ERROR("Failed to read sramflash register");
 			return retval;
+		}
+		retval = target_read_u32(target, FCTL_REG_DESC, &flashdesc);
+		if (retval != ERROR_OK) {
+			LOG_ERROR("Failed to read flashctl description register");
+			return retval;
+		}
+
+		/* Restore original clock source */
+		if (hsclk_disabled == 1) {
+			mclkcfg |= SYSCTL_MCLKCFG_USEHSCLK_ENABLE;
+			target_write_u32(target, SYSCTL_SOCLOCK_MCLKCFG, mclkcfg);
+			if (retval != ERROR_OK) {
+				LOG_ERROR("Failed to write memory");
+				return retval;
+			}			
 		}
 	}
 
