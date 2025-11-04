@@ -23,6 +23,12 @@
 #define MSPM0_FLASH_BASE_MAIN           0x0
 #define MSPM0_FLASH_BASE_DATA           0x41D00000
 
+/* MSPM0 FACTORYREGION offsets */
+#define MSPM0_TRACEID_OFFSET            0x000UL
+#define MSPM0_DID_OFFSET                0x004UL
+#define MSPM0_USERID_OFFSET             0x008UL
+#define MSPM0_SRAMFLASH_OFFSET          0x018UL
+
 /* MSPM0 FACTORYREGION registers */
 #define MSPM0_FACTORYREGION             0x41C40000
 #define MSPM0_TRACEID                   (MSPM0_FACTORYREGION + MSPM0_TRACEID_OFFSET)
