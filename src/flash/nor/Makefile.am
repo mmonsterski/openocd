@@ -12,6 +12,7 @@ NOR_DRIVERS = \
 	%D%/aduc702x.c \
 	%D%/aducm360.c \
 	%D%/ambiqmicro.c \
+	%D%/artery.c \
 	%D%/at91sam4.c \
 	%D%/at91sam4l.c \
 	%D%/at91samd.c \
@@ -30,6 +31,7 @@ NOR_DRIVERS = \
 	%D%/cc_lpf3_flash.c \
 	%D%/cfi.c \
 	%D%/dsp5680xx_flash.c \
+	%D%/dw-spi.c \
 	%D%/efm32.c \
 	%D%/em357.c \
 	%D%/eneispif.c \
@@ -62,7 +64,7 @@ NOR_DRIVERS = \
 	%D%/psoc6.c \
 	%D%/qn908x.c \
 	%D%/renesas_rpchf.c \
-	%D%/rp2040.c \
+	%D%/rp2xxx.c \
 	%D%/rsl10.c \
 	%D%/sfdp.c \
 	%D%/sh_qspi.c \
@@ -88,12 +90,14 @@ NOR_DRIVERS = \
 	%D%/xmc4xxx.c
 
 NORHEADERS = \
+	%D%/artery.h \
 	%D%/core.h \
 	%D%/cc3220sf.h \
 	%D%/bluenrg-x.h \
 	%D%/cc26xx.h \
 	%D%/cfi.h \
 	%D%/driver.h \
+	%D%/dw-spi-helper.h \
 	%D%/imp.h \
 	%D%/non_cfi.h \
 	%D%/cc_lpf3_base.h \

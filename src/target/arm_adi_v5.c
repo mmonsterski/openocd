@@ -50,8 +50,16 @@
 /*
  * Relevant specifications from ARM include:
  *
- * ARM(tm) Debug Interface v5 Architecture Specification    ARM IHI 0031F
+ * ARM(tm) Debug Interface v5 Architecture Specification    ARM IHI 0031G
+ * https://developer.arm.com/documentation/ihi0031/latest/
+ *
  * ARM(tm) Debug Interface v6 Architecture Specification    ARM IHI 0074C
+ * https://developer.arm.com/documentation/ihi0074/latest/
+ *
+ * Note that diagrams B4-1 to B4-7 in both ADI specifications show
+ * SWCLK signal mostly in wrong polarity. See detailed SWD timing
+ * https://developer.arm.com/documentation/dui0499/b/arm-dstream-target-interface-connections/swd-timing-requirements
+ *
  * CoreSight(tm) v1.0 Architecture Specification            ARM IHI 0029B
  *
  * CoreSight(tm) DAP-Lite TRM, ARM DDI 0316D
@@ -795,11 +803,12 @@ int dap_dp_init(struct adiv5_dap *dap)
 	dap->dp_ctrl_stat = CDBGPWRUPREQ | CSYSPWRUPREQ;
 
 	/*
-	 * This write operation clears the sticky error bit in jtag mode only and
-	 * is ignored in swd mode. It also powers-up system and debug domains in
-	 * both jtag and swd modes, if not done before.
+	 * This write operation clears the sticky error and overrun bits in jtag
+	 * mode only and is ignored in swd mode. It also powers-up system and
+	 * debug domains in both jtag and swd modes, if not done before.
 	 */
-	retval = dap_queue_dp_write(dap, DP_CTRL_STAT, dap->dp_ctrl_stat | SSTICKYERR);
+	retval = dap_queue_dp_write(dap, DP_CTRL_STAT,
+				    dap->dp_ctrl_stat | SSTICKYERR | SSTICKYORUN);
 	if (retval != ERROR_OK)
 		return retval;
 
@@ -1453,11 +1462,13 @@ static const struct dap_part_nums {
 	{ ARM_ID, 0x4af, "Cortex-A15 ROM",             "(ROM Table)", },
 	{ ARM_ID, 0x4b5, "Cortex-R5 ROM",              "(ROM Table)", },
 	{ ARM_ID, 0x4b8, "Cortex-R52 ROM",             "(ROM Table)", },
+	{ ARM_ID, 0x4bd, "Cortex-R52+ ROM",            "(ROM Table)", },
 	{ ARM_ID, 0x4c0, "Cortex-M0+ ROM",             "(ROM Table)", },
 	{ ARM_ID, 0x4c3, "Cortex-M3 ROM",              "(ROM Table)", },
 	{ ARM_ID, 0x4c4, "Cortex-M4 ROM",              "(ROM Table)", },
 	{ ARM_ID, 0x4c7, "Cortex-M7 PPB ROM",          "(Private Peripheral Bus ROM Table)", },
 	{ ARM_ID, 0x4c8, "Cortex-M7 ROM",              "(ROM Table)", },
+	{ ARM_ID, 0x4c9, "STAR ROM",                   "(ROM Table)", },
 	{ ARM_ID, 0x4e0, "Cortex-A35 ROM",             "(v7 Memory Map ROM Table)", },
 	{ ARM_ID, 0x4e4, "Cortex-A76 ROM",             "(ROM Table)", },
 	{ ARM_ID, 0x906, "CoreSight CTI",              "(Cross Trigger)", },
@@ -1499,6 +1510,7 @@ static const struct dap_part_nums {
 	{ ARM_ID, 0x9ae, "Cortex-A17 PMU",             "(Performance Monitor Unit)", },
 	{ ARM_ID, 0x9af, "Cortex-A15 PMU",             "(Performance Monitor Unit)", },
 	{ ARM_ID, 0x9b6, "Cortex-R52 PMU/CTI/ETM",     "(Performance Monitor Unit/Cross Trigger/ETM)", },
+	{ ARM_ID, 0x9bb, "Cortex-R52+ PMU/CTI/ETM",    "(Performance Monitor Unit/Cross Trigger/ETM)", },
 	{ ARM_ID, 0x9b7, "Cortex-R7 PMU",              "(Performance Monitor Unit)", },
 	{ ARM_ID, 0x9d3, "Cortex-A53 PMU",             "(Performance Monitor Unit)", },
 	{ ARM_ID, 0x9d7, "Cortex-A57 PMU",             "(Performance Monitor Unit)", },
@@ -1528,11 +1540,16 @@ static const struct dap_part_nums {
 	{ ARM_ID, 0xc17, "Cortex-R7 Debug",            "(Debug Unit)", },
 	{ ARM_ID, 0xd03, "Cortex-A53 Debug",           "(Debug Unit)", },
 	{ ARM_ID, 0xd04, "Cortex-A35 Debug",           "(Debug Unit)", },
+	{ ARM_ID, 0xd05, "Cortex-A55 Debug",           "(Debug Unit)", },
 	{ ARM_ID, 0xd07, "Cortex-A57 Debug",           "(Debug Unit)", },
 	{ ARM_ID, 0xd08, "Cortex-A72 Debug",           "(Debug Unit)", },
 	{ ARM_ID, 0xd0b, "Cortex-A76 Debug",           "(Debug Unit)", },
 	{ ARM_ID, 0xd0c, "Neoverse N1",                "(Debug Unit)", },
 	{ ARM_ID, 0xd13, "Cortex-R52 Debug",           "(Debug Unit)", },
+	{ ARM_ID, 0xd16, "Cortex-R52+ Debug",          "(Debug Unit)", },
+	{ ARM_ID, 0xd21, "STAR Debug",                 "(Debug Unit)", },
+	{ ARM_ID, 0xd22, "Cortex-M55 Debug",           "(Debug Unit)", },
+	{ ARM_ID, 0xd43, "Cortex-A65AE Debug",         "(Debug Unit)", },
 	{ ARM_ID, 0xd49, "Neoverse N2",                "(Debug Unit)", },
 	{ 0x017,  0x120, "TI SDTI",                    "(System Debug Trace Interface)", }, /* from OMAP3 memmap */
 	{ 0x017,  0x343, "TI DAPCTL",                  "", }, /* from OMAP3 memmap */
@@ -1552,6 +1569,9 @@ static const struct dap_part_nums {
 	{ 0x1eb,  0x211, "Tegra 210 ROM",              "(ROM Table)", },
 	{ 0x1eb,  0x302, "Denver Debug",               "(Debug Unit)", },
 	{ 0x1eb,  0x402, "Denver PMU",                 "(Performance Monitor Unit)", },
+	{ 0x575,  0x132, "STAR SCS",                   "(System Control Space)", },
+	{ 0x575,  0x4d2, "Cortex-M52 ROM",             "(ROM Table)", },
+	{ 0x575,  0xd24, "Cortex-M52 Debug",           "(Debug Unit)", },
 };
 
 static const struct dap_part_nums *pidr_to_part_num(unsigned int designer_id, unsigned int part_num)
@@ -2347,7 +2367,7 @@ static int adiv5_jim_spot_configure(struct jim_getopt_info *goi,
 
 	switch (n->value) {
 	case CFG_DAP:
-		if (goi->isconfigure) {
+		if (goi->is_configure) {
 			Jim_Obj *o_t;
 			struct adiv5_dap *dap;
 			e = jim_getopt_obj(goi, &o_t);
@@ -2355,7 +2375,9 @@ static int adiv5_jim_spot_configure(struct jim_getopt_info *goi,
 				return e;
 			dap = dap_instance_by_jim_obj(goi->interp, o_t);
 			if (!dap) {
-				Jim_SetResultString(goi->interp, "DAP name invalid!", -1);
+				const char *dap_name = Jim_GetString(o_t, NULL);
+				Jim_SetResultFormatted(goi->interp, "DAP '%s' not found",
+					dap_name);
 				return JIM_ERR;
 			}
 			if (*dap_p && *dap_p != dap) {
@@ -2376,7 +2398,7 @@ static int adiv5_jim_spot_configure(struct jim_getopt_info *goi,
 		break;
 
 	case CFG_AP_NUM:
-		if (goi->isconfigure) {
+		if (goi->is_configure) {
 			/* jim_wide is a signed 64 bits int, ap_num is unsigned with max 52 bits */
 			jim_wide ap_num;
 			e = jim_getopt_wide(goi, &ap_num);
@@ -2403,7 +2425,7 @@ static int adiv5_jim_spot_configure(struct jim_getopt_info *goi,
 		LOG_WARNING("DEPRECATED! use \'-baseaddr' not \'-ctibase\'");
 		/* fall through */
 	case CFG_BASEADDR:
-		if (goi->isconfigure) {
+		if (goi->is_configure) {
 			jim_wide base;
 			e = jim_getopt_wide(goi, &base);
 			if (e != JIM_OK)

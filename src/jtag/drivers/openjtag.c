@@ -50,7 +50,7 @@ static const char * const openjtag_variant_names[] = {
 /*
  * OpenJTAG-OpenOCD state conversion
  */
-typedef enum openjtag_tap_state {
+enum openjtag_tap_state {
 	OPENJTAG_TAP_INVALID    = -1,
 	OPENJTAG_TAP_RESET  = 0,
 	OPENJTAG_TAP_IDLE   = 1,
@@ -68,7 +68,7 @@ typedef enum openjtag_tap_state {
 	OPENJTAG_TAP_PAUSE_IR   = 13,
 	OPENJTAG_TAP_EXIT2_IR   = 14,
 	OPENJTAG_TAP_UPDATE_IR  = 15,
-} openjtag_tap_state_t;
+};
 
 /* OPENJTAG access library includes */
 #include "libftdi_helper.h"
@@ -135,36 +135,36 @@ static void openjtag_debug_buffer(uint8_t *buffer, int length, uint8_t type)
 	int j;
 
 	switch (type) {
-		case DEBUG_TYPE_READ:
-			sprintf(line, "USB READ %d bytes", length);
-			break;
-		case DEBUG_TYPE_WRITE:
-			sprintf(line, "USB WRITE %d bytes", length);
-			break;
-		case DEBUG_TYPE_OCD_READ:
-			sprintf(line, "TO OpenOCD %d bytes", length);
-			break;
-		case DEBUG_TYPE_BUFFER:
-			sprintf(line, "Buffer %d bytes", length);
-			break;
+	case DEBUG_TYPE_READ:
+		sprintf(line, "USB READ %d bytes", length);
+		break;
+	case DEBUG_TYPE_WRITE:
+		sprintf(line, "USB WRITE %d bytes", length);
+		break;
+	case DEBUG_TYPE_OCD_READ:
+		sprintf(line, "TO OpenOCD %d bytes", length);
+		break;
+	case DEBUG_TYPE_BUFFER:
+		sprintf(line, "Buffer %d bytes", length);
+		break;
 	}
 
 	LOG_DEBUG("%s", line);
 
 	for (i = 0; i < length; i += LINE_LEN) {
 		switch (type) {
-			case DEBUG_TYPE_READ:
-				sprintf(line, "USB READ: %04x", i);
-				break;
-			case DEBUG_TYPE_WRITE:
-				sprintf(line, "USB WRITE: %04x", i);
-				break;
-			case DEBUG_TYPE_OCD_READ:
-				sprintf(line, "TO OpenOCD: %04x", i);
-				break;
-			case DEBUG_TYPE_BUFFER:
-				sprintf(line, "BUFFER: %04x", i);
-				break;
+		case DEBUG_TYPE_READ:
+			sprintf(line, "USB READ: %04x", i);
+			break;
+		case DEBUG_TYPE_WRITE:
+			sprintf(line, "USB WRITE: %04x", i);
+			break;
+		case DEBUG_TYPE_OCD_READ:
+			sprintf(line, "TO OpenOCD: %04x", i);
+			break;
+		case DEBUG_TYPE_BUFFER:
+			sprintf(line, "BUFFER: %04x", i);
+			break;
 		}
 
 		for (j = i; j < i + LINE_LEN && j < length; j++) {
@@ -182,24 +182,24 @@ static int8_t openjtag_get_tap_state(int8_t state)
 {
 
 	switch (state) {
-		case TAP_DREXIT2:   return OPENJTAG_TAP_EXIT2_DR;
-		case TAP_DREXIT1:   return OPENJTAG_TAP_EXIT1_DR;
-		case TAP_DRSHIFT:   return OPENJTAG_TAP_SHIFT_DR;
-		case TAP_DRPAUSE:   return OPENJTAG_TAP_PAUSE_DR;
-		case TAP_IRSELECT:  return OPENJTAG_TAP_SELECT_IR;
-		case TAP_DRUPDATE:  return OPENJTAG_TAP_UPDATE_DR;
-		case TAP_DRCAPTURE: return OPENJTAG_TAP_CAPTURE_DR;
-		case TAP_DRSELECT:  return OPENJTAG_TAP_SELECT_DR;
-		case TAP_IREXIT2:   return OPENJTAG_TAP_EXIT2_IR;
-		case TAP_IREXIT1:   return OPENJTAG_TAP_EXIT1_IR;
-		case TAP_IRSHIFT:   return OPENJTAG_TAP_SHIFT_IR;
-		case TAP_IRPAUSE:   return OPENJTAG_TAP_PAUSE_IR;
-		case TAP_IDLE:      return OPENJTAG_TAP_IDLE;
-		case TAP_IRUPDATE:  return OPENJTAG_TAP_UPDATE_IR;
-		case TAP_IRCAPTURE: return OPENJTAG_TAP_CAPURE_IR;
-		case TAP_RESET:     return OPENJTAG_TAP_RESET;
-		case TAP_INVALID:
-		default:            return OPENJTAG_TAP_INVALID;
+	case TAP_DREXIT2:   return OPENJTAG_TAP_EXIT2_DR;
+	case TAP_DREXIT1:   return OPENJTAG_TAP_EXIT1_DR;
+	case TAP_DRSHIFT:   return OPENJTAG_TAP_SHIFT_DR;
+	case TAP_DRPAUSE:   return OPENJTAG_TAP_PAUSE_DR;
+	case TAP_IRSELECT:  return OPENJTAG_TAP_SELECT_IR;
+	case TAP_DRUPDATE:  return OPENJTAG_TAP_UPDATE_DR;
+	case TAP_DRCAPTURE: return OPENJTAG_TAP_CAPTURE_DR;
+	case TAP_DRSELECT:  return OPENJTAG_TAP_SELECT_DR;
+	case TAP_IREXIT2:   return OPENJTAG_TAP_EXIT2_IR;
+	case TAP_IREXIT1:   return OPENJTAG_TAP_EXIT1_IR;
+	case TAP_IRSHIFT:   return OPENJTAG_TAP_SHIFT_IR;
+	case TAP_IRPAUSE:   return OPENJTAG_TAP_PAUSE_IR;
+	case TAP_IDLE:      return OPENJTAG_TAP_IDLE;
+	case TAP_IRUPDATE:  return OPENJTAG_TAP_UPDATE_IR;
+	case TAP_IRCAPTURE: return OPENJTAG_TAP_CAPURE_IR;
+	case TAP_RESET:     return OPENJTAG_TAP_RESET;
+	case TAP_INVALID:
+	default:            return OPENJTAG_TAP_INVALID;
 	}
 }
 
@@ -347,34 +347,34 @@ static int openjtag_speed(int speed)
 {
 	int clockcmd;
 	switch (speed) {
-		case 48000:
-			clockcmd = 0x00;
-			break;
-		case 24000:
-			clockcmd = 0x20;
-			break;
-		case 12000:
-			clockcmd = 0x40;
-			break;
-		case 6000:
-			clockcmd = 0x60;
-			break;
-		case 3000:
-			clockcmd = 0x80;
-			break;
-		case 1500:
-			clockcmd = 0xA0;
-			break;
-		case 750:
-			clockcmd = 0xC0;
-			break;
-		case 375:
-			clockcmd = 0xE0;
-			break;
-		default:
-			clockcmd = 0xE0;
-			LOG_WARNING("adapter speed not recognized, reverting to 375 kHz");
-			break;
+	case 48000:
+		clockcmd = 0x00;
+		break;
+	case 24000:
+		clockcmd = 0x20;
+		break;
+	case 12000:
+		clockcmd = 0x40;
+		break;
+	case 6000:
+		clockcmd = 0x60;
+		break;
+	case 3000:
+		clockcmd = 0x80;
+		break;
+	case 1500:
+		clockcmd = 0xA0;
+		break;
+	case 750:
+		clockcmd = 0xC0;
+		break;
+	case 375:
+		clockcmd = 0xE0;
+		break;
+	default:
+		clockcmd = 0xE0;
+		LOG_WARNING("adapter speed not recognized, reverting to 375 kHz");
+		break;
 	}
 	openjtag_sendcommand(clockcmd);
 
@@ -748,7 +748,7 @@ static void openjtag_execute_scan(struct jtag_command *cmd)
 static void openjtag_execute_runtest(struct jtag_command *cmd)
 {
 
-	tap_state_t end_state = cmd->cmd.runtest->end_state;
+	enum tap_state end_state = cmd->cmd.runtest->end_state;
 	tap_set_end_state(end_state);
 
 	/* only do a state_move when we're not already in IDLE */
@@ -760,15 +760,17 @@ static void openjtag_execute_runtest(struct jtag_command *cmd)
 	if (openjtag_variant != OPENJTAG_VARIANT_CY7C65215 ||
 		cmd->cmd.runtest->num_cycles) {
 		uint8_t command;
-		int cycles = cmd->cmd.runtest->num_cycles;
+		unsigned int num_cycles = cmd->cmd.runtest->num_cycles;
 
 		do {
+			const unsigned int num_cycles_cmd = MIN(num_cycles, 16);
+
 			command = 7;
-			command |= (((cycles > 16 ? 16 : cycles) - 1) & 0x0F) << 4;
+			command |= ((num_cycles_cmd - 1) & 0x0F) << 4;
 
 			openjtag_add_byte(command);
-			cycles -= 16;
-		} while (cycles > 0);
+			num_cycles -= num_cycles_cmd;
+		} while (num_cycles > 0);
 	}
 
 	tap_set_end_state(end_state);
@@ -929,7 +931,8 @@ static struct jtag_interface openjtag_interface = {
 
 struct adapter_driver openjtag_adapter_driver = {
 	.name = "openjtag",
-	.transports = jtag_only,
+	.transport_ids = TRANSPORT_JTAG,
+	.transport_preferred_id = TRANSPORT_JTAG,
 	.commands = openjtag_command_handlers,
 
 	.init = openjtag_init,

@@ -114,12 +114,18 @@ static int remote_bitbang_fill_buf(enum block_bool block)
 				contiguous_available_space);
 		if (first && block == BLOCK)
 			socket_nonblock(remote_bitbang_fd);
-		first = false;
 		if (count > 0) {
 			remote_bitbang_recv_buf_end += count;
 			if (remote_bitbang_recv_buf_end == sizeof(remote_bitbang_recv_buf))
 				remote_bitbang_recv_buf_end = 0;
 		} else if (count == 0) {
+			/* When read_socket returns 0, socket reached EOF and there is
+			 * no data to read. But if request was blocking, the caller
+			 * expected some data. Such situations should be treated as ERROR. */
+			if (first && block == BLOCK) {
+				LOG_ERROR("remote_bitbang: socket closed by remote");
+				return ERROR_FAIL;
+			}
 			return ERROR_OK;
 		} else if (count < 0) {
 #ifdef _WIN32
@@ -133,17 +139,18 @@ static int remote_bitbang_fill_buf(enum block_bool block)
 				return ERROR_FAIL;
 			}
 		}
+		first = false;
 	}
 
 	return ERROR_OK;
 }
 
-typedef enum {
+enum flush_bool {
 	NO_FLUSH,
 	FLUSH_SEND_BUF
-} flush_bool_t;
+};
 
-static int remote_bitbang_queue(int c, flush_bool_t flush)
+static int remote_bitbang_queue(int c, enum flush_bool flush)
 {
 	remote_bitbang_send_buf[remote_bitbang_send_buf_used++] = c;
 	if (flush == FLUSH_SEND_BUF ||
@@ -169,17 +176,17 @@ static int remote_bitbang_quit(void)
 	return ERROR_OK;
 }
 
-static bb_value_t char_to_int(int c)
+static enum bb_value char_to_int(int c)
 {
 	switch (c) {
-		case '0':
-			return BB_LOW;
-		case '1':
-			return BB_HIGH;
-		default:
-			remote_bitbang_quit();
-			LOG_ERROR("remote_bitbang: invalid read response: %c(%i)", c, c);
-			return BB_ERROR;
+	case '0':
+		return BB_LOW;
+	case '1':
+		return BB_HIGH;
+	default:
+		remote_bitbang_quit();
+		LOG_ERROR("remote_bitbang: invalid read response: %c(%i)", c, c);
+		return BB_ERROR;
 	}
 }
 
@@ -191,7 +198,7 @@ static int remote_bitbang_sample(void)
 	return remote_bitbang_queue('R', NO_FLUSH);
 }
 
-static bb_value_t remote_bitbang_read_sample(void)
+static enum bb_value remote_bitbang_read_sample(void)
 {
 	if (remote_bitbang_recv_buf_empty()) {
 		if (remote_bitbang_fill_buf(BLOCK) != ERROR_OK)
@@ -244,7 +251,7 @@ static int remote_bitbang_sleep(unsigned int microseconds)
 	return remote_bitbang_flush();
 }
 
-static int remote_bitbang_blink(int on)
+static int remote_bitbang_blink(bool on)
 {
 	char c = on ? 'B' : 'b';
 	return remote_bitbang_queue(c, FLUSH_SEND_BUF);
@@ -271,7 +278,7 @@ static int remote_bitbang_swd_write(int swclk, int swdio)
 	return remote_bitbang_queue(c, NO_FLUSH);
 }
 
-static struct bitbang_interface remote_bitbang_bitbang = {
+static const struct bitbang_interface remote_bitbang_bitbang = {
 	.buf_size = sizeof(remote_bitbang_recv_buf) - 1,
 	.sample = &remote_bitbang_sample,
 	.read_sample = &remote_bitbang_read_sample,
@@ -405,8 +412,6 @@ COMMAND_HANDLER(remote_bitbang_handle_remote_bitbang_host_command)
 	return ERROR_COMMAND_SYNTAX_ERROR;
 }
 
-static const char * const remote_bitbang_transports[] = { "jtag", "swd", NULL };
-
 COMMAND_HANDLER(remote_bitbang_handle_remote_bitbang_use_remote_sleep_command)
 {
 	if (CMD_ARGC != 1)
@@ -477,7 +482,8 @@ static struct jtag_interface remote_bitbang_interface = {
 
 struct adapter_driver remote_bitbang_adapter_driver = {
 	.name = "remote_bitbang",
-	.transports = remote_bitbang_transports,
+	.transport_ids = TRANSPORT_JTAG | TRANSPORT_SWD,
+	.transport_preferred_id = TRANSPORT_JTAG,
 	.commands = remote_bitbang_command_handlers,
 
 	.init = &remote_bitbang_init,

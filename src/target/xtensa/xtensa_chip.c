@@ -81,7 +81,7 @@ static const struct xtensa_power_ops xtensa_chip_dm_pwr_ops = {
 	.queue_reg_write = xtensa_dm_queue_pwr_reg_write
 };
 
-static int xtensa_chip_target_create(struct target *target, Jim_Interp *interp)
+static int xtensa_chip_target_create(struct target *target)
 {
 	struct xtensa_debug_module_config xtensa_chip_dm_cfg = {
 		.dbg_ops = &xtensa_chip_dm_dbg_ops,
@@ -103,7 +103,7 @@ static int xtensa_chip_target_create(struct target *target, Jim_Interp *interp)
 		LOG_DEBUG("DAP: ap_num %" PRId64 " DAP %p\n", pc->ap_num, pc->dap);
 	} else {
 		xtensa_chip_dm_cfg.tap = target->tap;
-		LOG_DEBUG("JTAG: %s:%s pos %d", target->tap->chip, target->tap->tapname,
+		LOG_DEBUG("JTAG: %s:%s pos %u", target->tap->chip, target->tap->tapname,
 			target->tap->abs_chain_position);
 	}
 
